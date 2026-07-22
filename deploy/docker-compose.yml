@@ -1,0 +1,26 @@
+# === PRODUKČNÍ compose — tahá hotový image z Docker Hubu ===
+# Na serveru:
+#   cd deploy && cp .env.example .env && nano .env
+#   mkdir -p config           # sem browser.json a cookies.txt (viz README)
+#   docker compose up -d
+services:
+  player:
+    image: docker.io/jardathedev/standalone-home-player:latest
+    container_name: home-yt-player
+    restart: unless-stopped
+    pull_policy: always
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    volumes:
+      # přihlašovací údaje (browser.json, cookies.txt) → deploy/config/
+      - ./config:/config
+    devices:
+      # prostrčení zvukovky hostitele (3,5mm jack přes ALSA)
+      - "/dev/snd:/dev/snd"
+    group_add:
+      # skupina 'audio' kvůli přístupu k /dev/snd.
+      # Pokud zvuk nejde, nahraď číselným GID z hostitele:
+      #   getent group audio | cut -d: -f3
+      - "audio"

@@ -1,0 +1,25 @@
+# === Lokální BUILD ze zdrojáků (bez Docker Hubu) ===
+# Např. na serveru před pushem image, nebo na Linux dev stroji.
+# Spuštění z KOŘENE projektu:
+#   docker compose -f debug/docker-compose.yml up --build
+#
+# Pozn.: obsahuje /dev/snd + group_add audio → počítá s Linuxem s ALSA.
+# (Na Windows Docker Desktopu zvukové zařízení není — pro čistý test UI
+#  bez zvuku si nastav MPV_AO=null v ../.env.)
+services:
+  player:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: home-yt-player-debug
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    volumes:
+      - ../config:/config
+    devices:
+      - "/dev/snd:/dev/snd"
+    group_add:
+      - "audio"

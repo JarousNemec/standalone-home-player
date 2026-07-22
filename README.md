@@ -80,17 +80,26 @@ Bez těchto souborů poběží aplikace anonymně (jen vyhledávání a song-rá
 
 ---
 
-## 3) Konfigurace a spuštění
+## 3) Konfigurace a spuštění (produkce — image z Docker Hubu)
+
+Na serveru stačí složka `deploy/` — compose tahá hotový image z Docker Hubu
+(image staví GitHub Actions při pushi, viz `.github/workflows/build-push.yml`).
 
 ```bash
+cd deploy
 cp .env.example .env
-nano .env          # nastav MPV_AUDIO_DEVICE, případně PORT
+nano .env                 # nastav MPV_AUDIO_DEVICE, případně PORT
+mkdir -p config           # sem browser.json a cookies.txt (viz krok 2)
 
-docker compose up -d --build
+docker compose up -d
 docker compose logs -f
 ```
 
 Otevři v prohlížeči: **http://<IP-serveru>:8080**
+
+> **Lokální build ze zdrojáků** (bez Docker Hubu, např. dev na Linuxu):
+> z kořene projektu `docker compose -f debug/docker-compose.yml up --build`.
+> Přihlašovací soubory pak patří do `config/` v kořeni projektu.
 
 ---
 
@@ -153,5 +162,8 @@ app/
   config.py    konfigurace z prostředí
 web/           frontend (index.html, app.js, style.css)
 config/        přihlašovací údaje (gitignored)
-Dockerfile · docker-compose.yml · .env.example
+deploy/        produkční compose (image z Docker Hubu) + .env.example
+debug/         lokální build compose (build ze zdrojáků)
+.github/       GitHub Actions — build & push image na Docker Hub
+Dockerfile · requirements.txt · .env.example
 ```
