@@ -57,17 +57,32 @@ soubory ve složce `config/`.
 
 ### a) `config/browser.json` — pro `ytmusicapi`
 
-1. Nainstaluj lokálně: `pip install ytmusicapi`
-2. Otevři **music.youtube.com** v prohlížeči (přihlášený na Premium).
-3. DevTools (F12) → záložka **Network** → filtruj `/browse` → klikni na
-   libovolný `POST` request na `.../youtubei/v1/browse`.
-4. Zkopíruj **request headers** (v Firefoxu „Copy Request Headers").
-5. Spusť `ytmusicapi browser` a vlož hlavičky → vznikne `browser.json`.
-6. Přesuň ho do `config/browser.json`.
+Vyrobí se z **request headers** přihlášeného requestu na YouTube Music.
+Nejsnáz ve **Firefoxu** (má „Copy Request Headers" na jeden klik):
 
-> Přesný postup se může s verzí `ytmusicapi` lišit — viz
-> <https://ytmusicapi.readthedocs.io/en/stable/setup/index.html>.
-> Alternativa je `ytmusicapi oauth` (vyžaduje Google OAuth client).
+1. Otevři **music.youtube.com** (přihlášený na Premium).
+2. **F12 → Network**, pak dej **F5** (reload) nebo klikni na Knihovnu/playlist —
+   naskáčou requesty na `.../youtubei/v1/...` (`browse`, `next`, `search`).
+3. Klikni na kterýkoli **POST** z nich → pravý klik → **Copy → Copy Request Headers**.
+   (Musí obsahovat řádky `Cookie:` a `X-Goog-AuthUser:`.)
+4. Vlož je do souboru **`debug/headers.txt`** (je v `.gitignore`, obsahuje session).
+5. Vygeneruj `browser.json` (potřebuje `pip install ytmusicapi`):
+
+   ```bash
+   python -c "import ytmusicapi; ytmusicapi.setup(filepath='config/browser.json', headers_raw=open('debug/headers.txt', encoding='utf-8').read())"
+   ```
+
+6. Ověření (vypíše počet tvých playlistů):
+
+   ```bash
+   python -c "from ytmusicapi import YTMusic; print(len(YTMusic('config/browser.json').get_library_playlists()), 'playlistu OK')"
+   ```
+
+> **Pozor:** HAR export z DevTools NEfunguje — Chrome/Edge z něj cookies
+> vyřezávají („sanitized HAR"). Použij `Copy Request Headers`, ne HAR.
+>
+> `browser.json` časem vyprší → zopakuj kroky 1–5 s čerstvými headers.
+> Dokumentace: <https://ytmusicapi.readthedocs.io/en/stable/setup/index.html>
 
 ### b) `config/cookies.txt` — pro `yt-dlp` (Premium kvalita)
 
