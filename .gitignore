@@ -1,0 +1,23 @@
+# Přihlašovací údaje — NIKDY necommitovat
+config/*
+!config/.gitkeep
+!config/README.md
+
+# Env
+.env
+
+# Debug: stažené libmpv DLL (velké binárky)
+debug/lib/*.dll
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# IDE / OS
+.idea/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db

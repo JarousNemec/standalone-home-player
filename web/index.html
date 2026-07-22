@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>🎵 Domácí přehrávač</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>🎵 Domácí přehrávač</h1>
+    <span id="conn" class="conn" title="Stav spojení">●</span>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="home">Domů</button>
+    <button class="tab" data-tab="playlists">Playlisty</button>
+    <button class="tab" data-tab="search">Hledat</button>
+    <button class="tab" data-tab="liked">Liked</button>
+    <button class="tab" data-tab="queue">Fronta</button>
+  </nav>
+
+  <main id="content">
+    <!-- HOME -->
+    <section class="view active" data-view="home">
+      <div id="home-sections" class="sections"></div>
+    </section>
+
+    <!-- PLAYLISTS -->
+    <section class="view" data-view="playlists">
+      <div id="playlist-grid" class="grid"></div>
+      <div id="playlist-detail" class="detail hidden"></div>
+    </section>
+
+    <!-- SEARCH -->
+    <section class="view" data-view="search">
+      <form id="search-form" class="search-bar">
+        <input id="search-input" type="search" placeholder="Hledat skladby, alba, interprety…" autocomplete="off">
+        <button type="submit">🔍</button>
+      </form>
+      <div id="search-results" class="list"></div>
+    </section>
+
+    <!-- LIKED -->
+    <section class="view" data-view="liked">
+      <div id="liked-list" class="list"></div>
+    </section>
+
+    <!-- QUEUE -->
+    <section class="view" data-view="queue">
+      <div id="queue-list" class="list"></div>
+    </section>
+  </main>
+
+  <!-- NOW PLAYING BAR -->
+  <footer id="player-bar" class="player-bar hidden">
+    <div class="np-info">
+      <img id="np-thumb" class="np-thumb" alt="">
+      <div class="np-meta">
+        <div id="np-title" class="np-title">—</div>
+        <div id="np-artist" class="np-artist"></div>
+      </div>
+      <span id="np-radio" class="radio-badge hidden" title="Stanice / autoplay">📻</span>
+    </div>
+
+    <div class="np-progress">
+      <span id="np-cur" class="time">0:00</span>
+      <input id="np-seek" class="seek" type="range" min="0" max="100" value="0" step="1">
+      <span id="np-dur" class="time">0:00</span>
+    </div>
+
+    <div class="np-controls">
+      <button id="btn-prev" title="Předchozí">⏮</button>
+      <button id="btn-play" class="play" title="Přehrát/Pauza">▶</button>
+      <button id="btn-next" title="Další">⏭</button>
+      <div class="vol">
+        <span>🔊</span>
+        <input id="np-vol" class="volume" type="range" min="0" max="100" value="100" step="1">
+      </div>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

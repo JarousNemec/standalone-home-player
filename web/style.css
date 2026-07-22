@@ -1,0 +1,169 @@
+:root {
+  --bg: #0f0f14;
+  --bg-elev: #1a1a22;
+  --bg-hover: #24242e;
+  --text: #f2f2f5;
+  --muted: #9a9aa8;
+  --accent: #ff2d55;
+  --accent-dim: #c81e40;
+  --border: #2a2a35;
+  --bar-h: 148px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  padding-bottom: calc(var(--bar-h) + env(safe-area-inset-bottom, 0));
+  min-height: 100vh;
+}
+
+/* ---- Topbar + tabs ---- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; position: sticky; top: 0; z-index: 10;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.topbar h1 { font-size: 1.1rem; font-weight: 700; }
+.conn { color: #444; font-size: 1.1rem; transition: color .3s; }
+.conn.online { color: #2ecc71; }
+.conn.offline { color: var(--accent); }
+
+.tabs {
+  display: flex; gap: 4px; padding: 8px 12px; overflow-x: auto;
+  position: sticky; top: 49px; z-index: 9; background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  flex: 0 0 auto; background: none; border: none; color: var(--muted);
+  font-size: .95rem; padding: 8px 14px; border-radius: 20px; cursor: pointer;
+  white-space: nowrap;
+}
+.tab.active { background: var(--bg-elev); color: var(--text); font-weight: 600; }
+
+/* ---- Views ---- */
+main { padding: 16px; max-width: 900px; margin: 0 auto; }
+.view { display: none; }
+.view.active { display: block; }
+.hidden { display: none !important; }
+
+h2.section-title { font-size: 1rem; margin: 18px 0 10px; color: var(--text); }
+
+/* ---- Grid (playlists / cards) ---- */
+.grid, .sections .cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 14px;
+}
+.card {
+  background: var(--bg-elev); border-radius: 10px; padding: 10px; cursor: pointer;
+  transition: background .15s;
+}
+.card:hover { background: var(--bg-hover); }
+.card img {
+  width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px;
+  background: var(--bg-hover);
+}
+.card .card-title { font-size: .88rem; font-weight: 600; margin-top: 8px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .card-sub { font-size: .78rem; color: var(--muted); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- List (tracks) ---- */
+.list { display: flex; flex-direction: column; gap: 2px; }
+.row {
+  display: flex; align-items: center; gap: 12px; padding: 8px 10px;
+  border-radius: 8px; cursor: pointer; transition: background .12s;
+}
+.row:hover { background: var(--bg-hover); }
+.row.playing { background: rgba(255,45,85,.12); }
+.row img { width: 44px; height: 44px; border-radius: 6px; object-fit: cover;
+  background: var(--bg-hover); flex: 0 0 auto; }
+.row .row-meta { min-width: 0; flex: 1; }
+.row .row-title { font-size: .92rem; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+.row.playing .row-title { color: var(--accent); font-weight: 600; }
+.row .row-sub { font-size: .78rem; color: var(--muted); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.row .row-dur { font-size: .78rem; color: var(--muted); flex: 0 0 auto; }
+
+.back-btn {
+  background: var(--bg-elev); border: none; color: var(--text); cursor: pointer;
+  padding: 8px 14px; border-radius: 8px; margin-bottom: 14px; font-size: .9rem;
+}
+.detail h2 { font-size: 1.2rem; margin-bottom: 4px; }
+.detail .detail-actions { margin: 12px 0 16px; }
+.play-all {
+  background: var(--accent); color: #fff; border: none; padding: 10px 20px;
+  border-radius: 22px; font-weight: 600; cursor: pointer; font-size: .95rem;
+}
+
+.search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+.search-bar input {
+  flex: 1; background: var(--bg-elev); border: 1px solid var(--border);
+  color: var(--text); padding: 12px 16px; border-radius: 24px; font-size: .95rem;
+}
+.search-bar button {
+  background: var(--accent); border: none; border-radius: 50%; width: 46px;
+  cursor: pointer; font-size: 1.1rem;
+}
+
+.empty { color: var(--muted); text-align: center; padding: 40px 20px; }
+
+/* ---- Player bar ---- */
+.player-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  background: var(--bg-elev); border-top: 1px solid var(--border);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0));
+  display: flex; flex-direction: column; gap: 8px;
+}
+.np-info { display: flex; align-items: center; gap: 12px; }
+.np-thumb { width: 48px; height: 48px; border-radius: 6px; object-fit: cover;
+  background: var(--bg-hover); flex: 0 0 auto; }
+.np-meta { min-width: 0; flex: 1; }
+.np-title { font-size: .95rem; font-weight: 600; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.np-artist { font-size: .8rem; color: var(--muted); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.radio-badge { font-size: 1rem; flex: 0 0 auto; }
+
+.np-progress { display: flex; align-items: center; gap: 10px; }
+.time { font-size: .72rem; color: var(--muted); min-width: 34px; text-align: center; }
+
+.np-controls { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.np-controls button {
+  background: none; border: none; color: var(--text); font-size: 1.3rem;
+  cursor: pointer; padding: 4px;
+}
+.np-controls .play {
+  background: var(--text); color: var(--bg); width: 44px; height: 44px;
+  border-radius: 50%; font-size: 1.1rem; display: flex; align-items: center;
+  justify-content: center;
+}
+.vol { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.vol span { font-size: .9rem; }
+
+/* Range inputs */
+input[type=range] {
+  -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px;
+  background: var(--border); cursor: pointer;
+}
+.seek { flex: 1; }
+.volume { width: 90px; }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 13px; height: 13px;
+  border-radius: 50%; background: var(--accent);
+}
+input[type=range]::-moz-range-thumb {
+  width: 13px; height: 13px; border: none; border-radius: 50%; background: var(--accent);
+}
+
+@media (min-width: 640px) {
+  .vol { min-width: 130px; }
+  .volume { width: 110px; }
+}

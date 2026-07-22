@@ -1,0 +1,20 @@
+services:
+  player:
+    build: .
+    container_name: home-yt-player
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    volumes:
+      # přihlašovací údaje (browser.json, cookies.txt)
+      - ./config:/config
+    devices:
+      # prostrčení zvukovky hostitele do kontejneru (3,5mm jack přes ALSA)
+      - "/dev/snd:/dev/snd"
+    group_add:
+      # skupina 'audio' kvůli přístupu k /dev/snd.
+      # Pokud zvuk nejde, nahraď číselným GID z hostitele:
+      #   getent group audio | cut -d: -f3
+      - "audio"
