@@ -1,0 +1,38 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKER_IMAGE: standalone-home-player
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest .
+
+      # Pull request image jen sestaví, ale nepushne — jinak by PR přepsal produkční :latest.
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push Docker Image
+        if: github.event_name == 'push'
+        run: docker push ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
