@@ -1,7 +1,7 @@
 """Přehrávač postavený na mpv (libmpv přes python-mpv).
 
 - Frontu (list track dictů) drží Python, mpv přehrává vždy jednu skladbu.
-- Konec skladby detekujeme observerem 'eof-reached' → přejdeme na další.
+- Konec skladby detekujeme událostí 'end-file' (reason=EOF) → přejdeme na další.
 - Autoplay: u konečné fronty (playlist/album) na konci naváže "radio" seedované
   z poslední skladby; u radio fronty se doplňuje průběžně před koncem.
 - Stav se pushuje přes StateManager. Callbacky z mpv běží v jiném vlákně, proto
@@ -79,7 +79,10 @@ class Player:
         self.mpv.observe_property("time-pos", self._on_time_pos)
         self.mpv.observe_property("duration", self._on_duration)
         self.mpv.observe_property("pause", self._on_pause)
-        self.mpv.observe_property("eof-reached", self._on_eof)
+        # Konec skladby přes událost 'end-file'. Property 'eof-reached' je
+        # spolehlivá jen s keep-open=yes; s výchozím keep-open=no mpv soubor po
+        # dohrání rovnou uvolní a observer se nezavolá → fronta se neposouvala.
+        self.mpv.event_callback("end-file")(self._on_end_file)
 
     # -------------------------------------------------------------- observers
     # (běží v mpv vlákně → broadcast plánujeme přes _threadsafe)
@@ -98,8 +101,16 @@ class Player:
     def _on_pause(self, _name: str, value: Any) -> None:
         self._threadsafe(self._emit_state())
 
-    def _on_eof(self, _name: str, value: Any) -> None:
-        if value is True:
+    def _on_end_file(self, event: Any) -> None:
+        # Postoupíme jen když skladba přirozeně dohrála (EOF) nebo skončila
+        # chybou (ERROR → přeskoč rozbitou skladbu). Ostatní důvody (ABORTED při
+        # stopu / načtení další, REDIRECT, QUIT) ignorujeme — jinak by se fronta
+        # posouvala dvakrát.
+        try:
+            reason = event.data.reason
+        except AttributeError:
+            return
+        if reason in (mpv.MpvEventEndFile.EOF, mpv.MpvEventEndFile.ERROR):
             self._threadsafe(self._advance(auto=True))
 
     def _threadsafe(self, coro) -> None:
