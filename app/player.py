@@ -68,7 +68,7 @@ class Player:
         else:
             log.warning("mpv: cookies nenalezeny — nižší kvalita / bez Premium")
 
-        m = mpv.MPV(**kwargs)
+        m = mpv.MPV(log_handler=self._on_mpv_log, loglevel="warn", **kwargs)
         m.volume = self.volume
         return m
 
@@ -110,8 +110,20 @@ class Player:
             reason = event.data.reason
         except AttributeError:
             return
+        if reason == mpv.MpvEventEndFile.ERROR:
+            track = self.current or {}
+            log.warning(
+                "Skladba selhala (mpv error %s) → přeskakuji: %s — %s",
+                getattr(event.data, "error", "?"),
+                track.get("artists", ""), track.get("title", ""),
+            )
         if reason in (mpv.MpvEventEndFile.EOF, mpv.MpvEventEndFile.ERROR):
             self._threadsafe(self._advance(auto=True))
+
+    def _on_mpv_log(self, level: str, prefix: str, text: str) -> None:
+        # mpv/ytdl_hook hlásí chyby jen do svého logu; bez tohohle mostu
+        # vypadá selhání streamu jako tiché přeskočení skladby.
+        log.warning("mpv[%s/%s] %s", prefix, level, text.rstrip())
 
     def _threadsafe(self, coro) -> None:
         loop = self._loop

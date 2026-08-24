@@ -155,6 +155,7 @@ uvicorn app.main:app --reload --port 8080
 | Nižší kvalita / chyby streamu | Chybí/vypršel `config/cookies.txt`, nebo je potřeba `pip install -U yt-dlp` (v kontejneru rebuild). |
 | Přehrávání se po čase rozbije | YouTube změnil API → rebuild s aktuálním `yt-dlp`/`ytmusicapi`. |
 | `libmpv` not found | Chybí balík `libmpv2` (Docker to řeší; na dev stroji doinstaluj). |
+| Skladby jen přeskakují (nic nehraje) | yt-dlp nemá JS runtime na řešení YouTube signature/n-challenge (`Signature solving failed`, `The page needs to be reloaded`). Řeší `yt-dlp[default,deno]` v `requirements.txt` → rebuild image. |
 
 ---
 
