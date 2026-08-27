@@ -23,3 +23,7 @@ MPV_AUDIO_DEVICE = os.getenv("MPV_AUDIO_DEVICE", "").strip()
 # Přehrávání
 DEFAULT_VOLUME = _int("DEFAULT_VOLUME", 100)
 RADIO_REFILL_THRESHOLD = _int("RADIO_REFILL_THRESHOLD", 3)
+
+# Jazyk a region dat z YouTube Music (viz ytmusicapi/locales)
+YTM_LANGUAGE = os.getenv("YTM_LANGUAGE", "cs").strip() or "cs"
+YTM_LOCATION = os.getenv("YTM_LOCATION", "CZ").strip()
