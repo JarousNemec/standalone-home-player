@@ -1,0 +1,26 @@
+# === Lokální BUILD ze zdrojáků BEZ zvukového zařízení ===
+# Pro dev stroje, kde `/dev/snd` neexistuje — typicky Windows/macOS Docker
+# Desktop. mpv jede s MPV_AO=null, takže se dá ověřit API i celé UI, jen
+# není slyšet zvuk.
+#
+# Spuštění z KOŘENE projektu:
+#   docker compose -f debug/docker-compose.no-audio.yml up --build
+#
+# Vyžaduje ../.env s `MPV_AO=null` (viz ../.env.example).
+# Se zvukem na Linuxu použij debug/docker-compose.yml.
+services:
+  player:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: home-yt-player-noaudio
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      # pojistka, kdyby v .env zůstalo alsa — bez /dev/snd by mpv nenaběhl
+      MPV_AO: "null"
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    volumes:
+      - ../config:/config
