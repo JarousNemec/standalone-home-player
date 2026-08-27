@@ -4,63 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>🎵 Domácí přehrávač</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <header class="topbar">
-    <h1>🎵 Domácí přehrávač</h1>
+    <button id="btn-back" class="icon-btn hidden" title="Zpět">←</button>
+    <h1 id="page-title">🎵 Domácí přehrávač</h1>
     <span id="conn" class="conn" title="Stav spojení">●</span>
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-tab="home">Domů</button>
-    <button class="tab" data-tab="playlists">Playlisty</button>
+    <button class="tab" data-tab="home">Domů</button>
     <button class="tab" data-tab="search">Hledat</button>
-    <button class="tab" data-tab="liked">Liked</button>
+    <button class="tab" data-tab="library">Knihovna</button>
     <button class="tab" data-tab="queue">Fronta</button>
   </nav>
 
-  <main id="content">
-    <!-- HOME -->
-    <section class="view active" data-view="home">
-      <div id="home-sections" class="sections"></div>
-    </section>
-
-    <!-- PLAYLISTS -->
-    <section class="view" data-view="playlists">
-      <div id="playlist-grid" class="grid"></div>
-      <div id="playlist-detail" class="detail hidden"></div>
-    </section>
-
-    <!-- SEARCH -->
-    <section class="view" data-view="search">
-      <form id="search-form" class="search-bar">
-        <input id="search-input" type="search" placeholder="Hledat skladby, alba, interprety…" autocomplete="off">
-        <button type="submit">🔍</button>
-      </form>
-      <div id="search-results" class="list"></div>
-    </section>
-
-    <!-- LIKED -->
-    <section class="view" data-view="liked">
-      <div id="liked-list" class="list"></div>
-    </section>
-
-    <!-- QUEUE -->
-    <section class="view" data-view="queue">
-      <div id="queue-list" class="list"></div>
-    </section>
-  </main>
+  <main id="content"></main>
 
   <!-- NOW PLAYING BAR -->
   <footer id="player-bar" class="player-bar hidden">
     <div class="np-info">
       <img id="np-thumb" class="np-thumb" alt="">
       <div class="np-meta">
-        <div id="np-title" class="np-title">—</div>
-        <div id="np-artist" class="np-artist"></div>
+        <div id="np-title" class="np-title link">—</div>
+        <div id="np-artist" class="np-artist link"></div>
       </div>
       <span id="np-radio" class="radio-badge hidden" title="Stanice / autoplay">📻</span>
+      <button id="btn-like" class="icon-btn like" title="Líbí se mi">♡</button>
     </div>
 
     <div class="np-progress">
@@ -70,9 +42,11 @@
     </div>
 
     <div class="np-controls">
+      <button id="btn-shuffle" class="mode" title="Náhodné přehrávání">🔀</button>
       <button id="btn-prev" title="Předchozí">⏮</button>
       <button id="btn-play" class="play" title="Přehrát/Pauza">▶</button>
       <button id="btn-next" title="Další">⏭</button>
+      <button id="btn-repeat" class="mode" title="Opakování">🔁</button>
       <div class="vol">
         <span>🔊</span>
         <input id="np-vol" class="volume" type="range" min="0" max="100" value="100" step="1">
@@ -80,6 +54,36 @@
     </div>
   </footer>
 
-  <script src="/app.js"></script>
+  <!-- BANNER: neaktivní session -->
+  <div id="auth-gate" class="gate hidden">
+    <div class="gate-box">
+      <div class="gate-icon">🔒</div>
+      <h2>Nejsi přihlášen k YouTube Music</h2>
+      <p id="gate-reason" class="gate-reason"></p>
+      <p>
+        Přehrávání i vyhledávání fungují dál, ale <strong>Domů, Knihovna, Liked
+        a hodnocení</strong> potřebují platnou session. YouTube na vypršené
+        přihlášení neodpoví chybou — jen pošle obecný, nepersonalizovaný obsah.
+      </p>
+      <ol class="gate-steps">
+        <li>Otevři <code>music.youtube.com</code> přihlášený na Premium.</li>
+        <li><strong>F12 → Network</strong>, reload, klikni na kterýkoli POST na
+          <code>/youtubei/v1/…</code> → <strong>Copy Request Headers</strong>.</li>
+        <li>Vlož do <code>debug/headers.txt</code> a vygeneruj
+          <code>config/browser.json</code> (postup v README).</li>
+        <li>Znovu vyexportuj <code>config/cookies.txt</code> (kvůli Premium kvalitě
+          streamu je potřeba restart služby; pro knihovnu a hodnocení stačí
+          <strong>Zkusit znovu</strong>).</li>
+      </ol>
+      <div class="gate-actions">
+        <button id="gate-retry" class="play-all">Zkusit znovu</button>
+        <button id="gate-dismiss" class="ghost-btn">Pokračovat bez přihlášení</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sheet-root"></div>
+
+  <script type="module" src="/js/main.js"></script>
 </body>
 </html>
