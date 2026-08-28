@@ -24,3 +24,6 @@ Thumbs.db
 # Debug — citlivé lokální soubory (session headers, HAR exporty)
 /debug/headers.txt
 /debug/*.har
+
+# Claude Code — lokální nastavení (per-stroj)
+.claude/settings.local.json
