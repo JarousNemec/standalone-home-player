@@ -18,8 +18,21 @@ export function el(tag, className = "", text = "") {
 }
 
 export function img(node, url) {
+    // Knihovna má stovky položek. Bez `lazy` prohlížeč pustí všechny requesty
+    // naráz a Google CDN část z nich odmítne s 429 → placeholdery místo obalů.
+    node.loading = "lazy";
+    node.decoding = "async";
     node.src = url || PLACEHOLDER;
+    let retried = false;
     node.onerror = () => {
+        // 429 je dočasné — zkus to jednou znovu, teprve pak to vzdej.
+        if (!retried && url) {
+            retried = true;
+            setTimeout(() => {
+                node.src = url + (url.includes("?") ? "&" : "?") + "retry=1";
+            }, 1500);
+            return;
+        }
         node.onerror = null;
         node.src = PLACEHOLDER;
     };
