@@ -9,7 +9,7 @@ a autoplay fungují, jen z toho není slyšet zvuk.
 Z **kořene projektu** (ne ze složky `debug/`):
 
 ```powershell
-docker compose -f debug/docker-compose.debug.yml up --build
+docker compose -f debug/docker-compose.no-audio.yml up --build
 ```
 
 Pak otevři: **http://localhost:8080**
@@ -17,7 +17,7 @@ Pak otevři: **http://localhost:8080**
 Zastavení: `Ctrl+C`, případně:
 
 ```powershell
-docker compose -f debug/docker-compose.debug.yml down
+docker compose -f debug/docker-compose.no-audio.yml down
 ```
 
 ## Co půjde otestovat
@@ -40,6 +40,7 @@ docker compose -f debug/docker-compose.debug.yml down
 
 Vlož do `config/`:
 - `browser.json` — `ytmusicapi browser` (viz hlavní README)
+  Hlavičky z prohlížeče na `browser.json` převede `debug/make_auth.py`.
 - `cookies.txt` — export přes rozšíření „Get cookies.txt LOCALLY" z youtube.com
 
 Pokud `config/cookies.txt` necháš **prázdný** nebo v něm bude nevalidní obsah
@@ -50,4 +51,4 @@ soubor smaž (appka pak jede bez cookies).
 
 - První build stáhne image a nainstaluje mpv/ffmpeg → chvíli to trvá.
 - Streamování vyžaduje internet (yt-dlp resolvuje audio z YouTube).
-- Logy: `docker compose -f debug/docker-compose.debug.yml logs -f`
+- Logy: `docker compose -f debug/docker-compose.no-audio.yml logs -f`

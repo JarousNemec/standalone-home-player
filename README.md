@@ -84,6 +84,14 @@ Nejsnáz ve **Firefoxu** (má „Copy Request Headers" na jeden klik):
    python -c "from ytmusicapi import YTMusic; print(len(YTMusic('config/browser.json').get_library_playlists()), 'playlistu OK')"
    ```
 
+> **Zkratka:** kroky 5–6 dělá `debug/make_auth.py` na jeden příkaz — vygeneruje,
+> ověří dotazem na YouTube a `config/browser.json` přepíše, jen když session žije:
+>
+> ```powershell
+> docker run --rm -v "${PWD}\config:/config" -v "${PWD}\debug:/debug" `
+>   debug-player:latest python /debug/make_auth.py
+> ```
+
 > **Pozor:** HAR export z DevTools NEfunguje — Chrome/Edge z něj cookies
 > vyřezávají („sanitized HAR"). Použij `Copy Request Headers`, ne HAR.
 >
