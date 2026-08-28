@@ -264,3 +264,12 @@ debug/         lokální build compose (se zvukem i varianta bez /dev/snd)
 .github/       GitHub Actions — build & push image na Docker Hub
 Dockerfile · requirements.txt · .env.example
 ```
+
+## Licence
+
+Kód v tomto repozitáři je pod licencí **MIT** — viz [`LICENSE`](LICENSE).
+Můžeš ho používat, upravovat i šířit, jen zachovej copyright a text licence.
+
+Licence se vztahuje **jen na kód tohoto projektu**. `ytmusicapi`, `yt-dlp`,
+`mpv` i ostatní závislosti mají vlastní licence a samotná hudba z YouTube Music
+pokrytá není — ta se řídí podmínkami YouTube a tvým předplatným.
