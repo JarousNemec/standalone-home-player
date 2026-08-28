@@ -66,14 +66,16 @@
         přihlášení neodpoví chybou — jen pošle obecný, nepersonalizovaný obsah.
       </p>
       <ol class="gate-steps">
-        <li>Otevři <code>music.youtube.com</code> přihlášený na Premium.</li>
+        <li>Otevři <code>music.youtube.com</code> přihlášený na Premium —
+          v <strong>anonymním okně</strong>.</li>
         <li><strong>F12 → Network</strong>, reload, klikni na kterýkoli POST na
           <code>/youtubei/v1/…</code> → <strong>Copy Request Headers</strong>.</li>
         <li>Vlož do <code>debug/headers.txt</code> a vygeneruj
-          <code>config/browser.json</code> (postup v README).</li>
-        <li>Znovu vyexportuj <code>config/cookies.txt</code> (kvůli Premium kvalitě
-          streamu je potřeba restart služby; pro knihovnu a hodnocení stačí
-          <strong>Zkusit znovu</strong>).</li>
+          <code>config/browser.json</code> (postup v README). Anonymní okno pak
+          zavři <strong>bez odhlášení</strong> — jinak si session bude rotovat
+          prohlížeč a přebíjet přehrávač.</li>
+        <li>Klikni na <strong>Zkusit znovu</strong>. Cookies pro yt-dlp si aplikace
+          vyrobí sama a session si od té chvíle obnovuje na pozadí.</li>
       </ol>
       <div class="gate-actions">
         <button id="gate-retry" class="play-all">Zkusit znovu</button>

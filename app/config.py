@@ -14,7 +14,18 @@ PORT = _int("PORT", 8080)
 
 # Přihlášení
 YTMUSIC_AUTH = os.getenv("YTMUSIC_AUTH", "/config/browser.json")
-YTDLP_COOKIES = os.getenv("YTDLP_COOKIES", "/config/cookies.txt")
+# Cookies pro yt-dlp si aplikace GENERUJE z YTMUSIC_AUTH. Default míří na tmpfs
+# (RAM) schválně: yt-dlp si soubor po každé skladbě ukládá zpátky, a na disku by
+# to znamenalo zápis do flash při každé písničce.
+YTDLP_COOKIES = os.getenv("YTDLP_COOKIES", "/dev/shm/yt-cookies.txt")
+
+# Obnovování session (rotace __Secure-*PSIDTS jako v prohlížeči)
+SESSION_ROTATE = os.getenv("SESSION_ROTATE", "1").strip().lower() not in ("0", "false", "no", "")
+# Jak často ověřit, že session žije. Jen dotaz po síti — disku se netýká.
+SESSION_CHECK_INTERVAL = _int("SESSION_CHECK_INTERVAL", 540)
+# Strop stáří tokenu. Rotace (a s ní jediný zápis na disk) se jinak spustí až
+# tehdy, když ověření selže. 0 = žádný strop, rotovat výhradně při selhání.
+SESSION_MAX_TOKEN_AGE = _int("SESSION_MAX_TOKEN_AGE", 2 * 3600)
 
 # Audio
 MPV_AO = os.getenv("MPV_AO", "alsa")

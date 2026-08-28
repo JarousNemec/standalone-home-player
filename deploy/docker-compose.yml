@@ -1,7 +1,7 @@
 # === PRODUKČNÍ compose — tahá hotový image z Docker Hubu ===
 # Na serveru:
 #   cd deploy && cp .env.example .env && nano .env
-#   mkdir -p config           # sem browser.json a cookies.txt (viz README)
+#   mkdir -p config           # sem patří jediný soubor: browser.json (viz README)
 #   docker compose up -d
 services:
   player:
@@ -14,7 +14,8 @@ services:
     ports:
       - "${PORT:-8080}:${PORT:-8080}"
     volumes:
-      # přihlašovací údaje (browser.json, cookies.txt) → deploy/config/
+      # přihlašovací údaje (browser.json) → deploy/config/. Aplikace si do nich
+      # ukládá přetočené cookies, musí to být tedy zapisovatelné.
       - ./config:/config
     devices:
       # prostrčení zvukovky hostitele (3,5mm jack přes ALSA)

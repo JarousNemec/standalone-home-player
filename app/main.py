@@ -23,6 +23,7 @@ from .models import (
     RateRequest,
 )
 from .player import Player
+from .session import CookieRotator
 from .state import StateManager
 from .ytmusic import YTM, YTMAuthError
 
@@ -38,22 +39,31 @@ WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
 state = StateManager()
 ytm: YTM
 player: Player
+rotator: CookieRotator
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global ytm, player
+    global ytm, player, rotator
     log.info("Spouštím YouTube Music přehrávač…")
     ytm = YTM()
+    # rotátor musí vyrobit cookies dřív, než si na ně mpv v konstruktoru sáhne
+    rotator = CookieRotator(config.YTMUSIC_AUTH, config.YTDLP_COOKIES, ytm,
+                            enabled=config.SESSION_ROTATE,
+                            check_interval=config.SESSION_CHECK_INTERVAL,
+                            max_token_age=config.SESSION_MAX_TOKEN_AGE)
+    rotator.sync_cookie_file()
     player = Player(ytm, state)
     player.attach_loop(asyncio.get_running_loop())
     # ověření session na pozadí — ať je v logu hned vidět, jestli jsme přihlášeni.
-    # Referenci držíme, jinak může úlohu sebrat garbage collector.
+    # Referenci držíme, jinak může úlohy sebrat garbage collector.
     auth_probe = asyncio.create_task(asyncio.to_thread(ytm.check_auth, True))
+    rotate_task = asyncio.create_task(rotator.run())
     log.info("Připraveno na portu %d", config.PORT)
     try:
         yield
     finally:
+        rotate_task.cancel()
         auth_probe.cancel()
         player.shutdown()
         log.info("Vypnuto.")
@@ -75,7 +85,11 @@ async def _auth_error_handler(request: Request, exc: YTMAuthError) -> JSONRespon
 async def api_status(refresh: bool = False):
     # ruční ověření z UI zároveň znovu načte browser.json, ať „Zkusit znovu“
     # zabere hned po jeho výměně a nemusí se restartovat kontejner
-    return await asyncio.to_thread(ytm.check_auth, refresh, refresh)
+    if refresh:
+        await asyncio.to_thread(rotator.reseed)
+        rotator.sync_cookie_file()
+    auth = await asyncio.to_thread(ytm.check_auth, refresh, refresh)
+    return {**auth, "rotation": rotator.status()}
 
 
 # --------------------------------------------------------------------------- #

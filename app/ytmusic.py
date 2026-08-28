@@ -276,6 +276,25 @@ class YTM:
         except Exception as e:  # noqa: BLE001
             log.warning("ytmusicapi: znovunačtení auth souboru selhalo: %s", e)
 
+    def apply_cookie(self, cookie: str) -> None:
+        """Vymění cookie hlavičku živému klientovi — bez restartu, bez souboru.
+
+        `YTMusic.base_headers` je cached_property vracející tentýž dict, ze kterého
+        se skládá každý požadavek, takže stačí přepsat položku. `sapisid` ani
+        `origin` se přepočítávat nemusí, ty se nemění (rotují jen *PSIDTS).
+        """
+        if not self.authenticated or not cookie:
+            return
+        try:
+            self.yt._auth_headers["cookie"] = cookie  # noqa: SLF001
+        except Exception as e:  # noqa: BLE001
+            log.warning("ytmusicapi: výměna cookies za běhu selhala: %s", e)
+
+    def invalidate_auth(self) -> None:
+        """Zahodí cache stavu přihlášení — další check_auth() se zeptá znovu."""
+        self._auth_state = None
+        self._auth_checked_at = 0.0
+
     def check_auth(self, force: bool = False, reload: bool = False) -> dict:
         """Ověří session skutečným autentizovaným dotazem. BLOKUJE (síť).
 

@@ -56,17 +56,19 @@ Zapiš si identifikátor (např. `plughw:0,0`) — půjde do `.env` jako
 
 ---
 
-## 2) Přihlášení k YouTube Music (jednorázově, s občasným obnovením)
+## 2) Přihlášení k YouTube Music (jednorázově)
 
-Pro tvoje playlisty, doporučení, „liked" a Premium kvalitu jsou potřeba dva
-soubory ve složce `config/`.
+Pro tvoje playlisty, doporučení, „liked" a Premium kvalitu je potřeba **jediný
+soubor**: `config/browser.json`. Cookies pro `yt-dlp` si aplikace vyrábí sama
+a session si sama obnovuje (viz [krok c](#c-obnovování-session-běží-samo)).
 
 ### a) `config/browser.json` — pro `ytmusicapi`
 
 Vyrobí se z **request headers** přihlášeného requestu na YouTube Music.
 Nejsnáz ve **Firefoxu** (má „Copy Request Headers" na jeden klik):
 
-1. Otevři **music.youtube.com** (přihlášený na Premium).
+1. Otevři **music.youtube.com** (přihlášený na Premium) — v **anonymním okně**
+   (proč: viz [krok c](#c-obnovování-session-běží-samo)).
 2. **F12 → Network**, pak dej **F5** (reload) nebo klikni na Knihovnu/playlist —
    naskáčou requesty na `.../youtubei/v1/...` (`browse`, `next`, `search`).
 3. Klikni na kterýkoli **POST** z nich → pravý klik → **Copy → Copy Request Headers**.
@@ -92,22 +94,83 @@ Nejsnáz ve **Firefoxu** (má „Copy Request Headers" na jeden klik):
 >   debug-player:latest python /debug/make_auth.py
 > ```
 
+7. Až budeš mít hotovo, **anonymní okno zavři, ale neodhlašuj se v něm.**
+
 > **Pozor:** HAR export z DevTools NEfunguje — Chrome/Edge z něj cookies
 > vyřezávají („sanitized HAR"). Použij `Copy Request Headers`, ne HAR.
 >
-> `browser.json` časem vyprší → zopakuj kroky 1–5 s čerstvými headers.
 > Dokumentace: <https://ytmusicapi.readthedocs.io/en/stable/setup/index.html>
 
-### b) `config/cookies.txt` — pro `yt-dlp` (Premium kvalita)
+### b) `cookies.txt` pro `yt-dlp` — generuje se sám
 
-1. V prohlížeči (přihlášený na YT Premium) přidej rozšíření typu
-   **„Get cookies.txt LOCALLY"**.
-2. Na `youtube.com` exportuj cookies do souboru **Netscape** formátu.
-3. Ulož jako `config/cookies.txt`.
+Nic neexportuj. Aplikace si cookies pro `yt-dlp` (Premium kvalita, soukromý
+obsah) vyrábí z `browser.json` a ukládá je na **tmpfs** (`/dev/shm/yt-cookies.txt`,
+viz `YTDLP_COOKIES`). Schválně do RAM: `yt-dlp` si cookie soubor po každé skladbě
+ukládá zpátky, takže na disku by to znamenalo zápis do flash při každé písničce.
 
-Bez těchto souborů poběží aplikace anonymně (jen vyhledávání a song-rádia).
+Starý `config/cookies.txt` z dřívějška můžeš smazat, už se nepoužívá.
 
-### c) Jak poznáš, že session vypršela
+Bez `browser.json` poběží aplikace anonymně (jen vyhledávání a song-rádia).
+
+### c) Obnovování session — běží samo
+
+Session tokeny YouTube (`__Secure-1PSIDTS` / `__Secure-3PSIDTS`) **rotují zhruba
+po 10 minutách**: server vydá nový a starý zneplatní. Vyexportované hlavičky proto
+dřív umíraly skoro okamžitě.
+
+Aplikace si teď o nové tokeny říká sama — stejným voláním jako prohlížeč
+(`accounts.youtube.com/RotateCookies`, `app/session.py`). Jeden export tak
+vydrží měsíce.
+
+Rotace není „obnovení tokenu“, ale **posun řetízku**: jakmile se přetočí
+`S0 → S1 → S2`, staré `S0` přestane platit — i pro samotné přihlášení. Token tedy
+neumírá stářím, ale nahrazením. (Přesně proto ti dřív export umíral po pár minutách:
+řetízek posouval tvůj vlastní přihlášený prohlížeč.)
+
+Z toho plyne, jak je to uděláno, aby se na disk sahalo co nejmíň:
+
+```
+každých SESSION_CHECK_INTERVAL:
+    ověř dotazem, že session žije         <- jen síť, na disk nesahá
+    když žije a token není starší
+      než SESSION_MAX_TOKEN_AGE:       hotovo, nic dalšího
+    jinak: rotace + zápis do browser.json  <- jediný okamžik zápisu
+```
+
+Hlava řetízku se ukládá **hned po rotaci**, jinak by ji restart kontejneru ztratil
+a přihlášení by spadlo. Zapisuje se atomicky a jen hodnota `cookie`, zbytek
+hlaviček zůstává. Zápisů za den je tedy `24 h / SESSION_MAX_TOKEN_AGE` — při
+výchozích 2 h **12 zápisů denně** místo 160, kterých by bylo třeba
+při rotaci à 9 minut.
+
+Strop 2 h vychází z měření: snímek cookies, který nikdo nerotoval, byl po
+**3 hodinách a 10 minutách** pořád přihlášený (39 vzorků à 5 minut, ani jedna
+rotace) — token tedy neumírá stářím. Kdo chce zápisy úplně na minimu, může dát
+`SESSION_MAX_TOKEN_AGE=0`; pak se rotuje výhradně tehdy, když ověření selhá.
+
+Pro srovnání: prohlížeč ukládá cookie jar při každé změně a YouTube posílá `SIDCC`
+skoro v každé odpovědi, takže jeden večer poslouchání znamená tisíce drobných
+zápisů do `cookies.sqlite`. Tohle je k disku výrazně šetrnější než mít puštěný
+Firefox.
+
+Cookies pro `yt-dlp` jsou mimo to vždy jen v RAM (`/dev/shm`), takže zápis
+při každé skladbě, který dělá `yt-dlp` sám, na flash vůbec nedopadne.
+
+> **Jednu session smí rotovat jen jeden klient.** Když zůstane přihlášené i okno
+> prohlížeče se stejnou session (nebo poběží dvě instance přehrávače nad jedním
+> exportem), budou si tokeny přebíjet navzájem a přihlášení bude padat. Proto se
+> hlavičky exportují z **anonymního okna, které se pak zavře bez odhlášení** —
+> tvůj běžný profil je jiná session a nekoliduje.
+
+Stav je vidět v `GET /api/status` v poli `rotation`
+(`lastCheck`, `lastRotation`, `tokenAge`, `nextAt`, `error`). Ruční ověření jedné rotace:
+
+```powershell
+docker run --rm -v "${PWD}\config:/config" -v "${PWD}\debug:/debug" `
+  debug-player:latest python /debug/rotate.py
+```
+
+### d) Jak poznáš, že session vypršela
 
 **YouTube na vypršené přihlášení neodpoví chybou** — místo tvých dat pošle
 obecný, nepersonalizovaný obsah. Bez kontroly to vypadá, že appka nefunguje:
@@ -133,14 +196,26 @@ Na serveru stačí složka `deploy/` — compose tahá hotový image z Docker Hu
 ```bash
 cd deploy
 cp .env.example .env
-nano .env                 # nastav MPV_AUDIO_DEVICE, případně PORT
-mkdir -p config           # sem browser.json a cookies.txt (viz krok 2)
+nano .env                 # doplň MPV_AUDIO_DEVICE, zbytek už je nastavený
+mkdir -p config           # sem browser.json (viz krok 2)
 
 docker compose up -d
 docker compose logs -f
 ```
 
 Otevři v prohlížeči: **http://<IP-serveru>:8080**
+
+> **Přecházíš z verze před automatickou obnovou session?** Na serveru stačí:
+>
+> ```bash
+> cd deploy
+> nano .env                  # YTDLP_COOKIES=/dev/shm/yt-cookies.txt
+> rm -f config/cookies.txt   # už se nepoužívá, generuje se z browser.json
+> docker compose pull && docker compose up -d
+> ```
+>
+> `config/browser.json` nech být — aplikace si do něj od téhle verze ukládá
+> přetočené cookies sama, takže složka `config/` musí zůstat zapisovatelná.
 
 > **Lokální build ze zdrojáků** (bez Docker Hubu) — z kořene projektu:
 >
@@ -220,9 +295,10 @@ uvicorn app.main:app --reload --port 8080
 | Problém | Řešení |
 |---|---|
 | Není zvuk | Zkontroluj `MPV_AUDIO_DEVICE` (`aplay -l`), odmutuj `alsamixer`. Když nejde přístup k `/dev/snd`, nahraď v compose `group_add: ["audio"]` číselným GID: `getent group audio \| cut -d: -f3`. |
-| Banner „Nejsi přihlášen" / prázdná Knihovna | Vypršel `config/browser.json` → vygeneruj znovu (krok 2). Ověř přes `GET /api/status`. |
-| Domů hlásí „Nepersonalizováno" | Totéž — bez platné session posílá YouTube obecný feed. |
-| Nižší kvalita / chyby streamu | Chybí/vypršel `config/cookies.txt`, nebo je potřeba `pip install -U yt-dlp` (v kontejneru rebuild). |
+| Banner „Nejsi přihlášen" / prázdná Knihovna | Session se nepodařilo obnovit → vygeneruj `config/browser.json` znovu (krok 2). Důvod je v `GET /api/status` v poli `rotation.error`. |
+| Přihlášení padá po pár minutách | Tutéž session rotuje ještě někdo jiný — přihlášené okno prohlížeče nebo druhá instance přehrávače. Exportuj z anonymního okna a zavři ho bez odhlášení. |
+| Domů hlásí „Nepersonalizováno" | Bez platné session posílá YouTube obecný feed. |
+| Nižší kvalita / chyby streamu | Chybí `browser.json` (bez něj nejsou cookies pro yt-dlp), nebo je potřeba `pip install -U yt-dlp` (v kontejneru rebuild). |
 | Přehrávání se po čase rozbije | YouTube změnil API → rebuild s aktuálním `yt-dlp`/`ytmusicapi`. |
 | `libmpv` not found | Chybí balík `libmpv2` (Docker to řeší; na dev stroji doinstaluj). |
 | Skladby jen přeskakují (nic nehraje) | yt-dlp nemá JS runtime na řešení YouTube signature/n-challenge (`Signature solving failed`, `The page needs to be reloaded`). Řeší `yt-dlp[default,deno]` v `requirements.txt` → rebuild image. Po 5 selháních za sebou se přehrávání zastaví a do logu přijde `Po sobě selhalo N skladeb`. |
@@ -234,7 +310,8 @@ uvicorn app.main:app --reload --port 8080
 
 - `ytmusicapi` a `yt-dlp` jsou **neoficiální** (šedá zóna YT ToS). Pro domácí
   použití OK; občas je potřeba aktualizovat (`docker compose build --pull`).
-- Tokeny/cookies časem **vyprší** → znovu vyexportuj (viz krok 2).
+- Session si aplikace obnovuje sama; když ji Google přesto zruší, znovu
+  vyexportuj hlavičky (viz krok 2).
 - Aplikace nemá autentizaci UI — je určená **jen pro domácí síť**.
 
 ## Struktura projektu

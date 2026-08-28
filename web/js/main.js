@@ -40,7 +40,8 @@ async function checkAuth(refresh = false) {
             invalidate("home");
             invalidate("library");
         } else {
-            showGate(status.reason);
+            // konkrétní chyba z rotátoru řekne víc než obecné "session vypršela"
+            showGate(status.rotation?.error || status.reason);
         }
         return status.authenticated;
     } catch (e) {
